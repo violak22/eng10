@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Английские слова — тренажёр</title>
+<style>
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:24px 16px 60px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    background:linear-gradient(160deg,#eef2ff,#f8fafc 50%,#ecfeff);
+    min-height:100vh;
+    color:#1e293b;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:680px;margin:0 auto;}
+
+  /* ---------- Шапка ---------- */
+  .header{text-align:center;margin-bottom:20px;}
+  .header h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;}
+  .subtitle{color:#64748b;font-size:14px;margin:0 0 14px;}
+  .bar{height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,#6366f1,#8b5cf6,#06b6d4);
+    transition:width .45s cubic-bezier(.4,.2,.2,1);}
+  .bar-label{font-size:13px;color:#64748b;margin-top:8px;}
+
+  /* ---------- Табы ---------- */
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#fff;
+    padding:6px;border-radius:16px;box-shadow:0 4px 16px rgba(15,23,42,.06);margin-bottom:20px;}
+  .tab{border:0;background:transparent;padding:10px 4px;border-radius:12px;font-size:13px;
+    font-weight:600;color:#64748b;cursor:pointer;transition:.2s;font-family:inherit;}
+  .tab:hover{background:#f1f5f9;color:#334155;}
+  .tab.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+    box-shadow:0 4px 12px rgba(99,102,241,.35);}
+
+  /* ---------- Виды ---------- */
+  .view{display:none;}
+  .view.active{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* ---------- Карточка ---------- */
+  .flashcard{perspective:1200px;height:250px;cursor:pointer;margin-bottom:16px;}
+  .flash-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;
+    transition:transform .55s cubic-bezier(.4,.2,.2,1);}
+  .flashcard.flipped .flash-inner{transform:rotateY(180deg);}
+  .flash-face{
+    position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:24px;text-align:center;
+    box-shadow:0 10px 30px rgba(15,23,42,.08);
+  }
+  .flash-back{transform:rotateY(180deg);background:linear-gradient(135deg,#eef2ff,#f5f3ff);}
+  .word{font-size:34px;font-weight:700;letter-spacing:-.02em;word-break:break-word;}
+  .translation{font-size:28px;font-weight:700;color:#4f46e5;word-break:break-word;}
+  .word-small{font-size:16px;color:#64748b;}
+  .tip{font-size:12px;color:#94a3b8;margin-top:6px;}
+
+  .speak-btn{border:0;background:#eef2ff;color:#4f46e5;width:44px;height:44px;border-radius:50%;
+    font-size:20px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;}
+  .speak-btn:hover{background:#e0e7ff;transform:scale(1.08);}
+  .speak-btn.small{width:36px;height:36px;font-size:16px;}
+  .speak-btn:active{transform:scale(.94);}
+
+  /* ---------- Кнопки ---------- */
+  .row{display:flex;gap:10px;}
+  .btn{flex:1;border:0;padding:14px;border-radius:14px;font-size:15px;font-weight:600;
+    cursor:pointer;font-family:inherit;transition:.2s;}
+  .btn.primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+    box-shadow:0 6px 16px rgba(99,102,241,.32);}
+  .btn.primary:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(99,102,241,.42);}
+  .btn.ghost{background:#fff;color:#475569;border:1px solid #e2e8f0;}
+  .btn.ghost:hover{background:#f8fafc;}
+  .btn.danger{background:#fff;color:#ef4444;border:1px solid #fecaca;margin-top:20px;width:100%;}
+  .btn.danger:hover{background:#fef2f2;}
+  .btn:active{transform:scale(.98);}
+
+  .counter{text-align:center;font-size:13px;color:#94a3b8;margin-top:12px;}
+
+  /* ---------- Аудирование ---------- */
+  .listen-card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:26px;
+    text-align:center;box-shadow:0 10px 30px rgba(15,23,42,.08);margin-bottom:16px;}
+  .big-speak{width:86px;height:86px;border-radius:50%;border:0;font-size:36px;cursor:pointer;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+    box-shadow:0 10px 24px rgba(99,102,241,.4);transition:.2s;}
+  .big-speak:hover{transform:scale(1.06);}
+  .big-speak:active{transform:scale(.94);}
+  .speed-row{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+  .chip{border:1px solid #e2e8f0;background:#fff;padding:7px 12px;border-radius:99px;
+    font-size:12px;cursor:pointer;font-family:inherit;color:#64748b;transition:.2s;}
+  .chip.active{background:#eef2ff;border-color:#c7d2fe;color:#4f46e5;font-weight:600;}
+
+  .options{display:grid;gap:10px;}
+  .option{padding:15px 18px;border-radius:14px;border:1.5px solid #e2e8f0;background:#fff;
+    font-size:16px;text-align:left;cursor:pointer;font-family:inherit;color:#1e293b;transition:.18s;}
+  .option:hover:not(.correct):not(.wrong){border-color:#a5b4fc;background:#f8faff;transform:translateX(2px);}
+  .option.correct{border-color:#10b981;background:#ecfdf5;color:#047857;font-weight:600;}
+  .option.wrong{border-color:#ef4444;background:#fef2f2;color:#b91c1c;}
+
+  .feedback{margin-top:14px;font-size:14px;font-weight:600;text-align:center;min-height:20px;}
+  .feedback.ok{color:#059669;}
+  .feedback.err{color:#dc2626;}
+
+  /* ---------- Письмо ---------- */
+  .write-card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:26px;
+    box-shadow:0 10px 30px rgba(15,23,42,.08);}
+  .write-label{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:6px;
+    text-transform:uppercase;letter-spacing:.08em;}
+  .write-ru{font-size:28px;font-weight:700;text-align:center;margin-bottom:20px;
+    color:#4f46e5;word-break:break-word;}
+  .write-input{width:100%;padding:15px 18px;border-radius:14px;border:2px solid #e2e8f0;
+    font-size:18px;font-family:inherit;outline:none;transition:.2s;background:#f8fafc;color:#1e293b;}
+  .write-input:focus{border-color:#a5b4fc;background:#fff;box-shadow:0 0 0 4px rgba(99,102,241,.1);}
+  .write-input.good{border-color:#10b981;background:#ecfdf5;color:#047857;}
+  .write-input.bad{border-color:#ef4444;background:#fef2f2;color:#b91c1c;}
+  .hint-text{font-size:13px;color:#94a3b8;text-align:center;margin-top:12px;min-height:18px;}
+
+  /* ---------- Статистика ---------- */
+  .stats-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+  .stat-box{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px;
+    text-align:center;box-shadow:0 4px 14px rgba(15,23,42,.05);}
+  .stat-num{font-size:24px;font-weight:700;color:#4f46e5;}
+  .stat-name{font-size:11px;color:#94a3b8;margin-top:4px;
+    text-transform:uppercase;letter-spacing:.06em;}
+  .stats-list{display:flex;flex-direction:column;gap:8px;max-height:420px;
+    overflow-y:auto;padding-right:4px;}
+  .stats-list::-webkit-scrollbar{width:6px;}
+  .stats-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px;}
+  .stat-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;
+    border-radius:12px;padding:10px 12px;font-size:14px;}
+  .stat-row.learned{border-color:#a7f3d0;background:#f0fdf4;}
+  .stat-row.progress{border-color:#c7d2fe;background:#f5f7ff;}
+  .stat-word{font-weight:600;flex-shrink:0;}
+  .stat-ru{color:#64748b;font-size:12px;flex:1;text-align:right;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stat-counts{font-size:12px;color:#94a3b8;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .mini-speak{border:0;background:transparent;font-size:15px;cursor:pointer;opacity:.55;padding:0 2px;}
+  .mini-speak:hover{opacity:1;}
+
+  @media (max-width:480px){
+    .tab{font-size:11px;padding:9px 2px;}
+    .word{font-size:28px;}
+    .translation{font-size:23px;}
+    .write-ru{font-size:23px;}
+    .flashcard{height:220px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <h1>🇬🇧 Английские слова</h1>
+    <p class="subtitle" id="subtitle">Тренажёр: учим, слушаем, пишем</p>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <div class="bar-label" id="barLabel">0 / 0 слов изучено</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="learn">📚 Учить</button>
+    <button class="tab" data-view="listen">🎧 Аудирование</button>
+    <button class="tab" data-view="write">✍️ Письмо</button>
+    <button class="tab" data-view="stats">📊 Прогресс</button>
+  </nav>
+
+  <!-- ================= УЧИТЬ ================= -->
+  <section class="view active" id="view-learn">
+    <div class="flashcard" id="flashcard">
+      <div class="flash-inner">
+        <div class="flash-face flash-front">
+          <div class="word" id="learnWord">—</div>
+          <button class="speak-btn" id="learnSpeak" title="Прослушать">🔊</button>
+          <div class="tip">Нажми на карточку, чтобы увидеть перевод</div>
+        </div>
+        <div class="flash-face flash-back">
+          <div class="translation" id="learnTranslation">—</div>
+          <div class="word-small" id="learnWordSmall">—</div>
+          <button class="speak-btn small" id="learnSpeak2" title="Прослушать">🔊</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn ghost" id="learnRepeat">Ещё раз 🔁</button>
+      <button class="btn primary" id="learnKnow">Знаю ✓</button>
+    </div>
+    <div class="counter">В очереди ещё: <span id="learnLeft">0</span></div>
+  </section>
+
+  <!-- ================= АУДИРОВАНИЕ ================= -->
+  <section class="view" id="view-listen">
+    <div class="listen-card">
+      <button class="big-speak" id="listenPlay">🔊</button>
+      <div class="tip">Нажми, чтобы услышать слово ещё раз</div>
+      <div class="speed-row">
+        <button class="chip" data-rate="0.6">🐢 медленно</button>
+        <button class="chip active" data-rate="0.85">🚶 обычно</button>
+        <button class="chip" data-rate="1.1">🐇 быстро</button>
+      </div>
+    </div>
+    <div class="options" id="listenOptions"></div>
+    <div class="feedback" id="listenFeedback"></div>
+  </section>
+
+  <!-- ================= ПИСЬМО ================= -->
+  <section class="view" id="view-write">
+    <div class="write-card">
+      <div class="write-label">Напиши по-английски</div>
+      <div class="write-ru" id="writeRu">—</div>
+      <input class="write-input" id="writeInput" type="text" autocomplete="off"
+             autocorrect="off" autocapitalize="off" spellcheck="false"
+             placeholder="Введите слово...">
+      <div class="row" style="margin-top:14px;">
+        <button class="btn ghost" id="writeHintBtn">Подсказка 💡</button>
+        <button class="btn primary" id="writeCheck">Проверить</button>
+      </div>
+      <div class="hint-text" id="writeHint"></div>
+      <div class="feedback" id="writeFeedback"></div>
+    </div>
+  </section>
+
+  <!-- ================= ПРОГРЕСС ================= -->
+  <section class="view" id="view-stats">
+    <div class="stats-summary" id="statsSummary"></div>
+    <div class="stats-list" id="statsList"></div>
+    <button class="btn danger" id="resetBtn">Сбросить прогресс</button>
+  </section>
+
+</div>
+
+<script>
+/* =====================================================
+   СЛОВА
+   ===================================================== */
+const WORDS = [
+  {en:"amount",                 ru:"количество"},
+  {en:"atmosphere",             ru:"атмосфера"},
+  {en:"autism",                 ru:"аутизм"},
+  {en:"badly-equipped",         ru:"плохо оснащённый"},
+  {en:"beautifully maintained", ru:"ухоженный"},
+  {en:"breast cancer",          ru:"рак груди"},
+  {en:"canteen",                ru:"столовая"},
+  {en:"complain",               ru:"жаловаться"},
+  {en:"complex",                ru:"комплекс"},
+  {en:"co-operation",           ru:"сотрудничество"},
+  {en:"cramped",                ru:"тесный"},
+  {en:"creche",                 ru:"ясли"},
+  {en:"desire",                 ru:"желание"},
+  {en:"extremely",              ru:"крайне"},
+  {en:"fairly",                 ru:"довольно"},
+  {en:"initial",                ru:"начальный"},
+  {en:"interactive",            ru:"интерактивный"},
+  {en:"interior",               ru:"интерьер"},
+  {en:"lid",                    ru:"крышка"},
+  {en:"locker",                 ru:"шкафчик"},
+  {en:"maintained",             ru:"ухоженный"},
+  {en:"not exactly",            ru:"не совсем / неточно"},
+  {en:"old-fashioned",          ru:"старомодный"},
+  {en:"pretty",                 ru:"довольно"},
+  {en:"productivity",           ru:"производительность"},
+  {en:"profit",                 ru:"прибыль"},
+  {en:"quite",                  ru:"вполне"},
+  {en:"really",                 ru:"действительно"},
+  {en:"recommendation",         ru:"рекомендация"},
+  {en:"run down",               ru:"запущенный"},
+  {en:"spacious",               ru:"просторный"},
+  {en:"state-of-the-art",       ru:"передовой"},
+  {en:"successful",             ru:"успешный"},
+  {en:"up-to-date",             ru:"актуальный"},
+  {en:"well-equipped",          ru:"хорошо оснащённый"}
+];
+
+/* =====================================================
+   УТИЛИТЫ
+   ===================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function norm(s){
+  return String(s).toLowerCase().trim()
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+/* =====================================================
+   ПРОГРЕСС (localStorage)
+   ===================================================== */
+const STORAGE_KEY = 'en_vocab_progress_v1';
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){ progress = {}; }
+
+function getP(en){
+  return progress[en] || {correct:0, wrong:0};
+}
+function isLearned(en){
+  return getP(en).correct >= 2;
+}
+function saveProgress(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); } catch(e){}
+}
+function mark(en, kind){
+  const p = getP(en);
+  p[kind] = (p[kind] || 0) + 1;
+  progress[en] = p;
+  saveProgress();
+  updateHeader();
+  if (currentView === 'stats') renderStats();
+}
+function updateHeader(){
+  const total = WORDS.length;
+  const learned = WORDS.filter(w => isLearned(w.en)).length;
+  const pct = total ? Math.round(learned / total * 100) : 0;
+  $('#barFill').style.width = pct + '%';
+  $('#barLabel').textContent = `${learned} / ${total} слов изучено (${pct}%)`;
+}
+
+/* =====================================================
+   ОЗВУЧКА
+   ===================================================== */
+let voices = [];
+let speechRate = 0.85;
+
+function loadVoices(){
+  if ('speechSynthesis' in window) voices = speechSynthesis.getVoices();
+}
+if ('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speak(text){
+  if (!('speechSynthesis' in window)){
+    alert('Ваш браузер не поддерживает озвучку речи 😕\nПопробуйте Chrome, Edge или Safari.');
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = speechRate;
+  u.pitch = 1;
+
+  const best =
+    voices.find(v => /^en[-_]US/i.test(v.lang) && /google|samantha|aria|jenny|natural|zira/i.test(v.name)) ||
+    voices.find(v => /^en[-_]US/i.test(v.lang)) ||
+    voices.find(v => /^en/i.test(v.lang));
+
+  if (best) u.voice = best;
+  speechSynthesis.speak(u);
+}
+
+/* =====================================================
+   НАВИГАЦИЯ
+   ===================================================== */
+let currentView = 'learn';
+
+function switchView(v){
+  currentView = v;
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  $$('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+
+  if (v === 'listen' && !listenCurrent) nextListen();
+  if (v === 'write'  && !writeCurrent)  nextWrite();
+  if (v === 'stats') renderStats();
+}
+$$('.tab').forEach(t => t.onclick = () => switchView(t.dataset.view));
+
+/* =====================================================
+   РЕЖИМ 1 — КАРТОЧКИ
+   ===================================================== */
+let learnQueue = [];
+let learnCurrent = null;
+
+function refillLearnQueue(){
+  const unlearned = WORDS.filter(w => !isLearned(w.en));
+  learnQueue = shuffle(unlearned.length ? unlearned : WORDS);
+}
+
+function nextLearn(){
+  if (learnQueue.length === 0) refillLearnQueue();
+  learnCurrent = learnQueue.shift();
+
+  $('#learnWord').textContent        = learnCurrent.en;
+  $('#learnWordSmall').textContent   = learnCurrent.en;
+  $('#learnTranslation').textContent = learnCurrent.ru;
+  $('#flashcard').classList.remove('flipped');
+  $('#learnLeft').textContent = learnQueue.length;
+}
+
+$('#flashcard').onclick = () => $('#flashcard').classList.toggle('flipped');
+
+$('#learnSpeak').onclick = e => { e.stopPropagation(); if (learnCurrent) speak(learnCurrent.en); };
+$('#learnSpeak2').onclick = e => { e.stopPropagation(); if (learnCurrent) speak(learnCurrent.en); };
+
+$('#learnKnow').onclick = () => {
+  if (!learnCurrent) return;
+  mark(learnCurrent.en, 'correct');
+  nextLearn();
+};
+
+$('#learnRepeat').onclick = () => {
+  if (!learnCurrent) return;
+  learnQueue.push(learnCurrent);   // вернуть слово в конец очереди
+  nextLearn();
+};
+
+/* =====================================================
+   РЕЖИМ 2 — АУДИРОВАНИЕ
+   ===================================================== */
+let listenQueue = [];
+let listenCurrent = null;
+let listenAnswered = false;
+
+function nextListen(){
+  if (listenQueue.length === 0) listenQueue = shuffle(WORDS);
+  listenCurrent = listenQueue.shift();
+  listenAnswered = false;
+
+  const fb = $('#listenFeedback');
+  fb.textContent = '';
+  fb.className = 'feedback';
+
+  // 3 неверных варианта (без совпадающих переводов)
+  const others = shuffle(WORDS.filter(w => w.ru !== listenCurrent.ru && w.en !== listenCurrent.en)).slice(0, 3);
+  const opts = shuffle([listenCurrent, ...others]);
+
+  const box = $('#listenOptions');
+  box.innerHTML = '';
+  opts.forEach(w => {
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = w.ru;
+    b.onclick = () => answerListen(b, w);
+    box.appendChild(b);
+  });
+
+  setTimeout(() => speak(listenCurrent.en), 300);
+}
+
+function answerListen(btn, chosen){
+  if (listenAnswered) return;
+  listenAnswered = true;
+
+  const correct = chosen.en === listenCurrent.en;
+
+  $$('#listenOptions .option').forEach(b => {
+    if (b.textContent === listenCurrent.ru) b.classList.add('correct');
+  });
+
+  const fb = $('#listenFeedback');
+
+  if (correct){
+    mark(listenCurrent.en, 'correct');
+    btn.classList.add('correct');
+    fb.textContent = `Верно! ${listenCurrent.en} — ${listenCurrent.ru}`;
+    fb.className = 'feedback ok';
+  } else {
+    mark(listenCurrent.en, 'wrong');
+    btn.classList.add('wrong');
+    fb.textContent = `Правильно: ${listenCurrent.en} — ${listenCurrent.ru}`;
+    fb.className = 'feedback err';
+  }
+
+  setTimeout(nextListen, correct ? 950 : 2100);
+}
+
+$('#listenPlay').onclick = () => { if (listenCurrent) speak(listenCurrent.en); };
+
+$$('.chip').forEach(c => {
+  c.onclick = () => {
+    speechRate = parseFloat(c.dataset.rate);
+    $$('.chip').forEach(x => x.classList.toggle('active', x === c));
+    if (listenCurrent) speak(listenCurrent.en);
+  };
+});
+
+/* =====================================================
+   РЕЖИМ 3 — ПИСЬМО
+   ===================================================== */
+let writeQueue = [];
+let writeCurrent = null;
+let writeAnswered = false;
+
+function nextWrite(){
+  if (writeQueue.length === 0) writeQueue = shuffle(WORDS);
+  writeCurrent = writeQueue.shift();
+  writeAnswered = false;
+
+  $('#writeRu').textContent = writeCurrent.ru;
+
+  const inp = $('#writeInput');
+  inp.value = '';
+  inp.className = 'write-input';
+  inp.disabled = false;
+  inp.focus();
+
+  $('#writeHint').textContent = '';
+  const fb = $('#writeFeedback');
+  fb.textContent = '';
+  fb.className = 'feedback';
+}
+
+function checkWrite(){
+  if (writeAnswered || !writeCurrent) return;
+
+  const inp = $('#writeInput');
+  const val = norm(inp.value);
+  if (!val) return;
+
+  writeAnswered = true;
+  const fb = $('#writeFeedback');
+
+  if (val === norm(writeCurrent.en)){
+    inp.classList.add('good');
+    inp.disabled = true;
+    mark(writeCurrent.en, 'correct');
+    fb.textContent = 'Отлично! ✓';
+    fb.className = 'feedback ok';
+    setTimeout(nextWrite, 1000);
+  } else {
+    inp.classList.add('bad');
+    mark(writeCurrent.en, 'wrong');
+    fb.textContent = `Правильный ответ: ${writeCurrent.en}`;
+    fb.className = 'feedback err';
+    setTimeout(nextWrite, 2300);
+  }
+}
+
+$('#writeCheck').onclick = checkWrite;
+
+$('#writeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkWrite();
+});
+
+$('#writeHintBtn').onclick = () => {
+  if (!writeCurrent) return;
+  const w = writeCurrent.en;
+  const n = Math.max(1, Math.ceil(w.length / 3));
+  const letters = w.replace(/[ -]/g, '').length;
+  $('#writeHint').textContent = `Начинается на «${w.slice(0, n)}…» · всего букв: ${letters}`;
+};
+
+/* =====================================================
+   СТАТИСТИКА
+   ===================================================== */
+function renderStats(){
+  const total = WORDS.length;
+  const learned = WORDS.filter(w => isLearned(w.en)).length;
+  const started = WORDS.filter(w => {
+    const p = progress[w.en];
+    return p && (p.correct || p.wrong);
+  }).length;
+
+  let tc = 0, tw = 0;
+  WORDS.forEach(w => {
+    const p = progress[w.en];
+    if (p){ tc += p.correct || 0; tw += p.wrong || 0; }
+  });
+  const acc = (tc + tw) ? Math.round(tc / (tc + tw) * 100) : 0;
+
+  $('#statsSummary').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-num">${learned}/${total}</div>
+      <div class="stat-name">Изучено</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${started}</div>
+      <div class="stat-name">В работе</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${acc}%</div>
+      <div class="stat-name">Точность</div>
+    </div>
+  `;
+
+  const list = $('#statsList');
+  list.innerHTML = '';
+  WORDS.forEach(w => {
+    const p = getP(w.en);
+    const state = isLearned(w.en) ? 'learned' : ((p.correct || p.wrong) ? 'progress' : '');
+
+    const row = document.createElement('div');
+    row.className = 'stat-row ' + state;
+
+    const wordEl = document.createElement('div');
+    wordEl.className = 'stat-word';
+    wordEl.textContent = w.en;
+
+    const ruEl = document.createElement('div');
+    ruEl.className = 'stat-ru';
+    ruEl.textContent = w.ru;
+
+    const cntEl = document.createElement('div');
+    cntEl.className = 'stat-counts';
+    cntEl.textContent = `✓${p.correct || 0} ✗${p.wrong || 0}`;
+
+    const spk = document.createElement('button');
+    spk.className = 'mini-speak';
+    spk.textContent = '🔊';
+    spk.title = 'Прослушать';
+    spk.onclick = () => speak(w.en);
+
+    row.append(wordEl, ruEl, cntEl, spk);
+    list.appendChild(row);
+  });
+}
+
+$('#resetBtn').onclick = () => {
+  if (!confirm('Точно сбросить весь прогресс? Это действие нельзя отменить.')) return;
+  progress = {};
+  saveProgress();
+  learnQueue = []; listenQueue = []; writeQueue = [];
+  learnCurrent = listenCurrent = writeCurrent = null;
+  updateHeader();
+  renderStats();
+};
+
+/* =====================================================
+   СТАРТ
+   ===================================================== */
+updateHeader();
+$('#subtitle').textContent = `Тренажёр · ${WORDS.length} слов: учим, слушаем, пишем`;
+nextLearn();
+</script>
+</body>
+</html>
